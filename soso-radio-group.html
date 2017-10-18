@@ -1,0 +1,81 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="soso-radio-group">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host ::slotted(*) {
+        padding: var(--soso-item-padding, 5px);
+      }
+    </style>
+    <slot id="slot" on-slotchange="refreshSlot"></slot>
+  </template>
+
+  <script>
+    class SosoRadioGroup extends Polymer.Element {
+      static get is() { return 'soso-radio-group'; }
+      static get properties() {
+        return {
+          selected: {
+            type: String,
+            observer: 'refresh',
+            notify: true
+          }
+        };
+      }
+      constructor() {
+        super();
+        this._checkListener = this._handleChecked.bind(this);
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener("change", this._checkListener);
+        this.refresh();
+      }
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        this.removeEventListener("checked", this._checkListener);
+      }
+
+      refreshSlot() {
+        console.log("refresh slot", this.selected);
+        this.refresh();
+      }
+
+      refresh() {
+        const nodes = this.$.slot.assignedNodes({ flatten: true }).filter(n => n.nodeType === Node.ELEMENT_NODE);
+        if (nodes) {
+          for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName === "SOSO-RADIO-BUTTON") {
+              const name = nodes[i].name || "";
+              if (this.selected && (name === this.selected)) {
+                nodes[i].checked = true;
+              } else {
+                nodes[i].checked = false;
+              }
+            }
+          }
+        }
+      }
+
+      _handleChecked(event) {
+        const checked = event.detail.checked;
+        const name = event.target.name;
+        if (name && checked) {
+          this.set("selected", name);
+          const event = new CustomEvent('select', { bubbles: true, composed: true, checked: this.checked, detail: { selected: name } });
+          this.dispatchEvent(event);
+        } else {
+          this.set("selected", "");
+          const event = new CustomEvent('select', { bubbles: true, composed: true, checked: this.checked, detail: { selected: "" } });
+          this.dispatchEvent(event);
+        }
+      }
+    }
+
+    window.customElements.define(SosoRadioGroup.is, SosoRadioGroup);
+  </script>
+</dom-module>
